@@ -1,0 +1,25 @@
+{
+  "seeds": [
+    43,
+    44,
+    45
+  ],
+  "architecture": "same official STACK model config; fresh weights",
+  "training_conditions": 146,
+  "validation_conditions": 21,
+  "test_conditions": 14,
+  "training_objective": "native STACK masked reconstruction + SW",
+  "checkpoint_selection": "full21 condition generated-expression gene PCC; constant genes contribute zero",
+  "max_epochs": 3000,
+  "early_stop_patience": 20,
+  "lr": 5e-05,
+  "weight_decay": 0.01,
+  "batch_size": 8,
+  "sample_size": 256,
+  "prompt_rule": "fixed top3 Jaccard train-only conditions;512 prompt cells per condition",
+  "generation_steps": 5,
+  "validation_sampling_seed": "fixed per training seed and condition",
+  "test_truth_used_in_training": false,
+  "counts_to_benchmark_scale": "non-modelled genes held at source control counts; numerical roundtrip verified",
+  "gene_count": 2000
+}

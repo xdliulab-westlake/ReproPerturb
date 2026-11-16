@@ -1,0 +1,17 @@
+{
+  "variant": "high",
+  "kernel": {
+    "length": 5.0,
+    "state": 0.0,
+    "sharing": 1.0,
+    "alpha": 0.01
+  },
+  "identity_alpha": 1.0,
+  "direction_alpha": 0.75,
+  "training_oof_utility": [
+    0.7886845827439887,
+    0.8308859457374309,
+    0.766040889803266
+  ],
+  "mean_training_oof_utility": 0.7952038060948952
+}

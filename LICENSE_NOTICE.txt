@@ -1,0 +1,5 @@
+Release candidate: redistribution permissions are NOT established by this package.
+
+No new MIT/Apache or other blanket license is assigned. Ownership and upstream licenses for project code, model components (including scFoundation-related code), pretrained weights, prepared biological datasets and protocol tables must be confirmed by their owners before public publication. Inclusion in this local handoff does not grant permission to redistribute.
+
+This package was assembled locally at the user's request. Nothing was uploaded or published. Preserve upstream notices and obtain author approval before an open-source release. This file is a limitation notice, not a software license.

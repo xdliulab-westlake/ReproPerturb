@@ -1,0 +1,111 @@
+{
+  "stage1": {
+    "config_module": "configs.stage1.stage1_softvq_hypo_hvg2000_celltype_updated_v7",
+    "checkpoint": "weights/stage1.pt",
+    "num_codebooks": 4,
+    "codes_per_group": 128,
+    "code_dim": 32,
+    "latent_dim": 128
+  },
+  "population": {
+    "epsilon": 1e-08
+  },
+  "prototype": {
+    "num_prototypes": 128,
+    "source": "stage1_product_code_activation",
+    "assignment_temperature": 0.07,
+    "presence_proportion_threshold": 0.02,
+    "presence_min_count": 3,
+    "selection_strategy": "celltype_balanced",
+    "selection_min_per_celltype": 6,
+    "selection_min_sample_support": 2,
+    "selection_score_weights": {
+      "coverage": 0.5,
+      "specificity": 0.5,
+      "sample_support": 0.25
+    }
+  },
+  "pathway": {
+    "conditioner": "legacy_pathway_token",
+    "num_pathways": 17,
+    "condition_dim": 256,
+    "pathway_specific_magnitude": true,
+    "interaction_hidden_dim": 32,
+    "interaction_scale": 0.5,
+    "use_drug_embedding": false,
+    "pathways_yaml": "assets/pathways.yaml",
+    "sign_csv": "assets/drug_pathway_sign.csv",
+    "learn_unknown_pathway_effects": false,
+    "known_effect_initialization": 1.0,
+    "unknown_effect_mode": "none",
+    "unknown_effect_rank": 4,
+    "pair_interaction_rank": null,
+    "triple_interaction_rank": 4,
+    "higher_order_scale": 1.25
+  },
+  "flow": {
+    "latent_dim": 128,
+    "condition_dim": 256,
+    "time_freqs": 1024,
+    "time_max_period": 10000,
+    "hidden_dims": [
+      4096,
+      4096,
+      4096
+    ],
+    "decoder_dims": [
+      4096,
+      4096,
+      4096
+    ],
+    "time_encoder_dims": [
+      2048,
+      2048,
+      2048
+    ],
+    "conditioning": "cross_attention",
+    "condition_token_dim": 768,
+    "token_model_dim": 256,
+    "num_token_layers": 3,
+    "token_ff_dim": 4096,
+    "token_nhead": 8,
+    "endpoint_rollout_steps": 20,
+    "flow_type": "constant_noise",
+    "flow_noise": 0.1,
+    "use_ot": false,
+    "path": "constant_noise",
+    "pathway_prototype_adaln": false
+  },
+  "training": {
+    "epochs": 3000,
+    "batch_size": 8,
+    "lr": 5e-05,
+    "split_path": "assets/stage2_split.csv",
+    "weight_decay": 0.0,
+    "val_fraction": 0.2,
+    "test_fraction": 0.2,
+    "early_stop_patience": 200,
+    "scheduler_factor": 0.5,
+    "scheduler_patience": 10,
+    "random_flow_loss_weight": 0.25,
+    "source_flow_loss_weight": 1.0,
+    "presence_loss_weight": 1.0,
+    "proportion_loss_weight": 4.0,
+    "expression_loss_weight": 0.1,
+    "extra_evaluation_samples": [
+      "H163",
+      "H164"
+    ],
+    "unknown_effect_l1_weight": 0.0,
+    "unknown_gate_l1_weight": 0.0,
+    "matched_pair_weight": 10.0,
+    "matched_pair_hypoblast_weight": 4.0,
+    "matched_pair_batch_size": 4,
+    "snapshot_epochs": [
+      50,
+      75,
+      100,
+      150
+    ]
+  }
+}
