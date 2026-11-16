@@ -23,7 +23,7 @@ def functions():
 def examples(seed):
  helpers();return torch.load(R/f'inputs/examples_seed{seed}.pt',weights_only=False)
 def extract(seed):
- from experiments.perturbation.evaluate_prototype_mass_flow import load_evaluation_module,select_split_records
+ from stage2.runners.evaluate_prototype_mass_flow import load_evaluation_module,select_split_records
  aux=helpers();tr,te,paths,groups=examples(seed)
  dest=R/f'features/seed{seed}';dest.mkdir(parents=True,exist_ok=True)
  assert not (dest/'COMPLETE.json').exists()
@@ -161,11 +161,11 @@ def main():
    print('Prepared fresh rerun directory',a.output)
   elif a.command=='train':
    assert a.output is not None and not a.output.exists() and a.seed is not None
-   subprocess.run([sys.executable,'-m','torch.distributed.run','--standalone','--nproc_per_node=1',str(R/'src/experiments/perturbation/train_prototype_mass_flow.py'),'--config',str(R/'configs/train.py'),'--pair-records',str(R/'assets/pair_records.pt'),'--pathway-base',str(R/'assets/pathway_base.pt'),'--output-dir',str(a.output),'--epochs',str(a.epochs),'--seed',str(a.seed),'--num-workers','0'],env=env,check=True)
+   subprocess.run([sys.executable,'-m','torch.distributed.run','--standalone','--nproc_per_node=1',str(R/'src/stage2/runners/train_prototype_mass_flow.py'),'--config',str(R/'configs/train.py'),'--pair-records',str(R/'assets/pair_records.pt'),'--pathway-base',str(R/'assets/pathway_base.pt'),'--output-dir',str(a.output),'--epochs',str(a.epochs),'--seed',str(a.seed),'--num-workers','0'],env=env,check=True)
   elif a.command=='forward':
    for seed in ([a.seed] if a.seed is not None else [43,44,45]):
     assert not (R/f'forward/seed{seed}').exists(),'Forward outputs already exist'
     common=['--flow-checkpoint',str(R/f'weights/seed{seed}.pt'),'--pair-records',str(R/'assets/pair_records.pt'),'--pathway-base',str(R/'assets/pathway_base.pt')]
     subprocess.run([sys.executable,str(R/'src/hypo_release/pipeline/evaluate_contextual_pathways_v741.py'),*common,'--split-manifest',str(R/'assets/context_split.csv'),'--output-dir',str(R/f'forward/seed{seed}/contextual'),'--context-drug-count','2','--tail-fraction','.10','--activity-strength','.75','--batch-size','24','--n-ode-steps','20','--device','cuda'],env=env,check=True)
-    subprocess.run([sys.executable,str(R/'src/experiments/perturbation/evaluate_prototype_mass_flow.py'),*common,'--config',str(R/'configs/train.py'),'--split-manifest',str(R/'assets/stage2_split.csv'),'--output-dir',str(R/f'forward/seed{seed}/test'),'--strict-test-only','--evaluation-split','test','--device','cuda'],env=env,check=True)
+    subprocess.run([sys.executable,str(R/'src/stage2/runners/evaluate_prototype_mass_flow.py'),*common,'--config',str(R/'configs/train.py'),'--split-manifest',str(R/'assets/stage2_split.csv'),'--output-dir',str(R/f'forward/seed{seed}/test'),'--strict-test-only','--evaluation-split','test','--device','cuda'],env=env,check=True)
 if __name__=='__main__':main()

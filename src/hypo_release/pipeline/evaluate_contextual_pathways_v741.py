@@ -14,7 +14,7 @@ import torch
 HYPO_CODE = Path(__import__('hypo_release.paths', fromlist=['resolve']).resolve('source', ''))
 if str(HYPO_CODE) not in sys.path:
     sys.path.insert(0, str(HYPO_CODE))
-from experiments.perturbation.evaluate_prototype_mass_flow import load_evaluation_module, select_split_records
+from stage2.runners.evaluate_prototype_mass_flow import load_evaluation_module, select_split_records
 TARGETS = {'nodal_tgfb': -1, 'bmp': 1, 'wnt': 1, 'fgf': 1, 'jak_stat': 1, 'pdgf': 1}
 
 def arguments():

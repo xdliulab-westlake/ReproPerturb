@@ -10,21 +10,18 @@ Source-only snapshot of the full-model workflow used in the latest 2026-11-16 fi
 
 The adopted Stage-2 checkpoints were freshly trained for 150 epochs in the 2026-11-09 reproduction; Stage-1 was reused. The latest benchmark figure retains the full model. Without-matched ablations are not the default release.
 
-## Source map
+## Code organization
 
-| Purpose | Entry |
-|---|---|
-| Stage-1 model/training | `src/model/`, `train_stage1.py` |
-| Stage-1 configuration | `src/configs/stage1/stage1_softvq_hypo_hvg2000_celltype_updated_v7.py` |
-| Stage-2 model | `src/model/perturbation/` |
-| Stage-2 training/evaluation | `src/experiments/perturbation/` and `hypo.py` |
-| Relation fitting | `src/hypo_release/unified.py`, `shared_math.py` |
-| Final signed-score generation | `workflows/all_celltype_heatmaps.py` |
-| Default final ranking | `rank_signed34.py` |
-| Latest external benchmark | `benchmarks/native-alignment-20261111/ed3_update_20261116/` |
-| STACK unified training | `benchmarks/stack-unified-20261113/` |
-| Independent intervention experiments | `benchmarks/hypo-independent-intervention-20261112/` |
-| Protocol concordance evaluation | `benchmarks/pathway-ranking-18-20261116/` |
+| Block | Architecture | Training / evaluation |
+|---|---|---|
+| **Stage-1** | [`model.py`](src/stage1/model.py), [`components/`](src/stage1/components/) | [`train.py`](src/stage1/train.py), [`train_stage1.py`](train_stage1.py), [`evaluation/`](src/stage1/evaluation/) |
+| **Stage-2** | [`src/stage2/model/`](src/stage2/model/) | [`src/stage2/runners/`](src/stage2/runners/) |
+| **Relation scorer** | [`shared_math.py`](src/hypo_release/shared_math.py) | [`unified.py`](src/hypo_release/unified.py) |
+| **Signed34 output** | [`all_celltype_heatmaps.py`](workflows/all_celltype_heatmaps.py) | [`rank_signed34.py`](rank_signed34.py) |
+| **Final benchmark** | [`benchmarks/README.md`](benchmarks/README.md) | Adopted evaluation/aggregation only |
+| **Shared dependencies** | `src/data/`, `src/scfoundation/`, `src/configs/` | Used by Stage-1/Stage-2 |
+
+See the [Stage-1 guide](src/stage1/README.md) and [Stage-2 guide](src/stage2/README.md). Trial analyses, protocol-ranking experiments, incomplete replacement benchmark jobs, installation/recovery scripts and old plotting workflows are excluded. Server originals are untouched. Imported registry components remain to preserve model loading.
 
 ## Environment and external assets
 

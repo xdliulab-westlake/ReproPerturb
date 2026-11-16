@@ -13,7 +13,7 @@ from torch.nn import functional as F
 HYPO_CODE = Path(__import__('hypo_release.paths', fromlist=['resolve']).resolve('source', ''))
 if str(HYPO_CODE) not in sys.path:
     sys.path.insert(0, str(HYPO_CODE))
-from experiments.perturbation.evaluate_prototype_mass_flow import load_evaluation_module
+from stage2.runners.evaluate_prototype_mass_flow import load_evaluation_module
 PUBLIC_TEST = {'H31', 'H132', 'H228', 'H237'}
 
 def arguments():

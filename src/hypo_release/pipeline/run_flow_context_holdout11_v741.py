@@ -11,7 +11,7 @@ import torch
 HYPO_CODE = Path(__import__('hypo_release.paths', fromlist=['resolve']).resolve('source', ''))
 if str(HYPO_CODE) not in sys.path:
     sys.path.insert(0, str(HYPO_CODE))
-from experiments.perturbation.evaluate_prototype_mass_flow import load_evaluation_module
+from stage2.runners.evaluate_prototype_mass_flow import load_evaluation_module
 
 def load_aux():
     path = Path(__import__('hypo_release.paths', fromlist=['resolve']).resolve('support', 'pathway_celltype_aux_experiment.py'))

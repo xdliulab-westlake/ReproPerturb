@@ -10,7 +10,7 @@ B=Path(__file__).resolve().parents[1];R=B;O=B/'all_celltype_heatmaps';O.mkdir(ex
 sys.path.insert(0,str(R/'src'))
 from hypo_release.unified import examples,features
 from hypo_release.shared_math import kernel,combine
-from experiments.perturbation.evaluate_prototype_mass_flow import load_evaluation_module,select_split_records
+from stage2.runners.evaluate_prototype_mass_flow import load_evaluation_module,select_split_records
 torch.set_num_threads(2);torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
 cfg=json.loads((R/'SHARED_CONFIG.json').read_text());assert cfg['variant']=='high'
 payload=torch.load(R/'assets/pair_records.pt',map_location='cpu',weights_only=True);contexts={}

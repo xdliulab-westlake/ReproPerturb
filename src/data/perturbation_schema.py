@@ -20,6 +20,6 @@ def read_sign_csv(path, drugs, pathways) -> torch.Tensor:
     rows = []
     with open(path, newline="", encoding="utf-8") as handle:
         rows.extend(csv.DictReader(handle))
-    from model.perturbation.pathway_condition import canonicalize_sign_table
+    from stage2.model.pathway_condition import canonicalize_sign_table
 
     return validate_sign_matrix(canonicalize_sign_table(rows, drugs, pathways))
