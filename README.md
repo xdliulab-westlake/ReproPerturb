@@ -14,10 +14,10 @@ The adopted Stage-2 checkpoints were freshly trained for 150 epochs in the 2026-
 
 | Block | Architecture | Training / evaluation |
 |---|---|---|
-| **Stage-1** | [`model.py`](src/stage1/model.py), [`components/`](src/stage1/components/) | [`train.py`](src/stage1/train.py), [`train_stage1.py`](train_stage1.py), [`evaluation/`](src/stage1/evaluation/) |
+| **Stage-1** | [`model.py`](src/stage1/model.py), [`components/`](src/stage1/components/) | [`train.py`](src/stage1/train.py), [`scripts/train_stage1.py`](scripts/train_stage1.py), [`evaluation/`](src/stage1/evaluation/) |
 | **Stage-2** | [`src/stage2/model/`](src/stage2/model/) | [`src/stage2/runners/`](src/stage2/runners/) |
 | **Relation scorer** | [`shared_math.py`](src/hypo_release/shared_math.py) | [`unified.py`](src/hypo_release/unified.py) |
-| **Signed34 output** | [`all_celltype_heatmaps.py`](workflows/all_celltype_heatmaps.py) | [`rank_signed34.py`](rank_signed34.py) |
+| **Signed34 output** | [`all_celltype_heatmaps.py`](workflows/all_celltype_heatmaps.py) | [`scripts/rank_signed34.py`](scripts/rank_signed34.py) |
 | **Final benchmark** | [`benchmarks/README.md`](benchmarks/README.md) | Adopted evaluation/aggregation only |
 | **Shared dependencies** | `src/data/`, `src/scfoundation/`, `src/configs/` | Used by Stage-1/Stage-2 |
 
@@ -34,27 +34,29 @@ No checkpoints, datasets, fitted relation parameters, predictions, figures, logs
 After configuring data paths and restoring required assets:
 
 ```bash
-torchrun --standalone --nproc_per_node=1 train_stage1.py
-python hypo.py train --seed 43 --epochs 150 --output /path/to/new_training_seed43
+torchrun --standalone --nproc_per_node=1 scripts/train_stage1.py
+python scripts/hypo.py train --seed 43 --epochs 150 --output /path/to/new_training_seed43
 # Repeat Stage-2 training for seeds 44 and 45; install the epoch-150
 # checkpoints as weights/seed43.pt, seed44.pt and seed45.pt.
-python hypo.py extract --seed 43
-python hypo.py extract --seed 44
-python hypo.py extract --seed 45
+python scripts/hypo.py extract --seed 43
+python scripts/hypo.py extract --seed 44
+python scripts/hypo.py extract --seed 45
 # For fresh relation selection, work in a separate run directory without
-# existing SHARED_CONFIG.json / fitted outputs; select refuses overwrites.
-python hypo.py select
-python hypo.py fit-evaluate
+# existing configs/SHARED_CONFIG.json / fitted outputs; select refuses overwrites.
+python scripts/hypo.py select
+python scripts/hypo.py fit-evaluate
 python workflows/all_celltype_heatmaps.py
-python rank_signed34.py --scores all_celltype_heatmaps/scores_all_celltypes_34.csv --output signed34_rankings.csv
+python scripts/rank_signed34.py --scores all_celltype_heatmaps/scores_all_celltypes_34.csv --output signed34_rankings.csv
 ```
 
-The shipped shared settings describe the adopted run; do not delete them merely to rerun inference. Legacy `hypo.py` report/verify and known-/unknown-K evaluations retain their historical selection semantics and are **not the default 34-candidate ranking interface**. Its `forward` command also includes a historical strength-0.75 contextual audit; use the explicit strength-1.5 workflow above for the final ranking. `prepare` expects the full historical release assets and is not a source-only bootstrap command.
+Retain `configs/SHARED_CONFIG.json` for inference. `select` is for a fresh selection run; the adopted scorer-selection criterion is unchanged. `fit-evaluate` fits the same kernel and writes held-out logits plus all 34 candidates directly in score order. Known-/Unknown-K evaluation and report/verify/prepare interfaces were removed. Shared helpers and contextual audit code remain as dependencies/reference implementations, not default ranking entry points. The heatmap optionally checks historical RESULTS.json when supplied; fresh runs no longer require that obsolete evaluation output. Score calculations are unchanged.
 
 ## Benchmark interpretation
 
 The latest figure uses completed seeds 43/44/45 for STATE independent embeddings, CellFlow updated pipeline, STACK unified training, repaired chemCPA and G2CP native UniPert. PerturbNet and PerturbGen figure values retain legacy adapted results while replacements remain incomplete. Included experimental scripts do not imply their runs are complete. Model-specific checkpoint selection and retrospective development exposure limit comparisons. Computational pathway scores are relative rankings, not biological validation or measured pathway activity.
 
-## Provenance and verification
+## Verification
 
-`SOURCE_MANIFEST.json` records original server source locations/hashes; `PUBLICATION_MANIFEST.json` records the final packaged files after entry-point and path adjustments. Publication checks cover Python/JSON and shell syntax, common credential patterns, artifact exclusion and a synthetic 34-way ranking case preserving opposite directions. No GPU training or numerical reproduction was rerun for this publication.
+The adopted full-model source is from the 2026-11-09 reproduction and final 2026-11-16 figure workflow. Publication-only manifests were removed. Runtime configuration is under `configs/`; command entry points are under `scripts/`. The obsolete unknown-K configuration has been removed. License/dependency files remain necessary.
+
+Checks cover syntax, local imports and direct signed34 ordering. No GPU training or full reproduction was rerun. Historical prepare/report/verify commands have been removed.

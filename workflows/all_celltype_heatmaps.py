@@ -12,7 +12,7 @@ from hypo_release.unified import examples,features
 from hypo_release.shared_math import kernel,combine
 from stage2.runners.evaluate_prototype_mass_flow import load_evaluation_module,select_split_records
 torch.set_num_threads(2);torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
-cfg=json.loads((R/'SHARED_CONFIG.json').read_text());assert cfg['variant']=='high'
+cfg=json.loads((R/'configs/SHARED_CONFIG.json').read_text());assert cfg['variant']=='high'
 payload=torch.load(R/'assets/pair_records.pt',map_location='cpu',weights_only=True);contexts={}
 for r in select_split_records(payload['records'],R/'assets/context_split.csv',split='train'):
  ids=tuple(sorted(map(int,r.get('original_drug_ids',r['drug_ids']))))
@@ -41,9 +41,14 @@ for seed in [43,44,45]:
   raw=fs[:,ci];x=(raw-state['mean'])/state['std'];x[:,61:]=raw[:,61:];ll=combine(kernel(x,state['train'],cfg['kernel'])@state['weight'],raw,cfg['identity_alpha'],cfg['direction_alpha']);s=np.sort(ll,axis=0)[-7:].mean(0).reshape(17,2);scores.append(s)
   for pi,path in enumerate(paths):
    for di,sign in enumerate(['+','-']):rows.append(dict(seed=seed,celltype=cell,pathway=path,direction=sign,score=s[pi,di],training_examples=support[cell]))
- scores=np.stack(scores);official=json.loads((R/'RESULTS.json').read_text())[str(seed)]['hypoblast']['rankings'];got=scores[classes.index('Hypoblast-like cell')].max(1)
- assert all(np.isclose(got[paths.index(v['pathway'])],v['score'],atol=2e-4,rtol=2e-4) for v in official)
- all_scores.append(scores);checks.append(dict(seed=seed,hypoblast_feature_max_error=float(err),hypoblast_identity_scores_reproduced=True));print('SCORED',seed,flush=True);del mod;torch.cuda.empty_cache()
+ scores=np.stack(scores)
+ legacy_results=R/'RESULTS.json'
+ legacy_verified=False
+ if legacy_results.exists():
+  official=json.loads((R/'RESULTS.json').read_text())[str(seed)]['hypoblast']['rankings'];got=scores[classes.index('Hypoblast-like cell')].max(1)
+  assert all(np.isclose(got[paths.index(v['pathway'])],v['score'],atol=2e-4,rtol=2e-4) for v in official)
+  legacy_verified=True
+ all_scores.append(scores);checks.append(dict(seed=seed,hypoblast_feature_max_error=float(err),hypoblast_identity_scores_reproduced=legacy_verified));print('SCORED',seed,flush=True);del mod;torch.cuda.empty_cache()
 a=np.stack(all_scores);pd.DataFrame(rows).to_csv(O/'scores_all_celltypes_34.csv',index=False)
 plt.rcParams.update({'font.family':'DejaVu Sans','pdf.fonttype':42,'svg.fonttype':'none'})
 for n in [17,34]:
