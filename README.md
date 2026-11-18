@@ -116,16 +116,16 @@ Run commands from the repository root after preparing the required inputs.
 torchrun --standalone --nproc_per_node=1 scripts/train_stage1.py
 ```
 
-Training settings and output paths are defined in the [Stage-1 configuration](src/configs/stage1/stage1_softvq_hypo_hvg2000_celltype_updated_v7.py). Place the selected Stage-1 checkpoint at `weights/stage1.pt` for Stage-2.
+Training settings and output paths are defined in the [Stage-1 configuration](src/configs/stage1/stage1_softvq_hypo_hvg2000_celltype_updated_v7.py). Place the best Stage-1 checkpoint selected by validation loss at `weights/stage1.pt` for Stage-2.
 
 ### 2. Train the response model
 
 ```bash
-python scripts/hypo.py train --seed 43 --epochs 150 \
+python scripts/hypo.py train --seed 43 \
   --output /path/to/new_training_seed43
 ```
 
-Repeat for seeds **44** and **45**, using a new output directory for each run. The adopted configuration uses the epoch-150 checkpoints as `weights/seed43.pt`, `weights/seed44.pt` and `weights/seed45.pt`. The full model retains matched-pair supervision. The adopted run retrained Stage-2 while reusing Stage-1.
+Repeat for seeds **44** and **45**, using a new output directory for each run. Training follows the stopping criteria in `configs/model.json` and saves `best_prototype_mass_flow.pt` at the lowest validation base loss. Copy each seed’s best checkpoint to its corresponding path under `weights/` (`seed43.pt`, `seed44.pt` or `seed45.pt`) for Stage-2 evaluation and pathway response extraction. The full model retains matched-pair supervision. The adopted run retrained Stage-2 while reusing Stage-1.
 
 ### 3. Extract features and fit the relation scorer
 
@@ -172,7 +172,7 @@ The workflow writes response features, signed relation scores and heatmaps. The 
 
 ## Benchmarks
 
-Composition and expression use task-specific checkpoints. Each composition model predicts the ten cell-type proportions directly, with checkpoint selection by validation composition MAE. Expression checkpoint selection for ReproPerturb uses validation gene PCC. See the [benchmark guide](benchmarks/README.md) for the training scripts, per-seed evaluation command and metric definitions. The epoch-150 checkpoints described above belong to the pathway workflow.
+Composition and expression use task-specific checkpoints. Each composition model predicts the ten cell-type proportions directly, with checkpoint selection by validation composition MAE. Expression checkpoint selection for ReproPerturb uses validation gene PCC. See the [benchmark guide](benchmarks/README.md) for the training scripts, per-seed evaluation command and metric definitions. The pathway workflow uses its own best checkpoint selected by validation base loss.
 
 ## Citation
 

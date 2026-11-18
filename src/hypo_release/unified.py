@@ -104,7 +104,7 @@ def fit_evaluate():
   logits=fn['combine'](kp,x[n:],c['identity_alpha'],c['direction_alpha']);np.save(dest/'holdout_logits.npy',logits)
   save(dest/'holdout_rankings.json',[{'sample_id':e.sample_id,'rankings':[{'pathway':paths[int(j)//2],'direction':['+','-'][int(j)%2],'score':float(logits[i,j])} for j in np.argsort(-logits[i],kind='stable')]} for i,e in enumerate(te)])
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('command',choices=['extract','select','fit-evaluate','train','forward']);p.add_argument('--seed',type=int,choices=[43,44,45]);p.add_argument('--output',type=Path);p.add_argument('--epochs',type=int,default=150);a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('command',choices=['extract','select','fit-evaluate','train','forward']);p.add_argument('--seed',type=int,choices=[43,44,45]);p.add_argument('--output',type=Path);p.add_argument('--epochs', type=int, help='Override the Stage-2 training epoch limit from the config');a=p.parse_args()
  if a.command=='extract':assert a.seed is not None;extract(a.seed)
  elif a.command=='select':select()
  elif a.command=='fit-evaluate':fit_evaluate()
@@ -113,7 +113,10 @@ def main():
   env=dict(os.environ,PYTHONPATH=str(R/'src'),OMP_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1',MKL_NUM_THREADS='1')
   if a.command=='train':
    assert a.output is not None and not a.output.exists() and a.seed is not None
-   subprocess.run([sys.executable,'-m','torch.distributed.run','--standalone','--nproc_per_node=1',str(R/'src/stage2/runners/train_prototype_mass_flow.py'),'--config',str(R/'configs/train.py'),'--pair-records',str(R/'assets/pair_records.pt'),'--pathway-base',str(R/'assets/pathway_base.pt'),'--output-dir',str(a.output),'--epochs',str(a.epochs),'--seed',str(a.seed),'--num-workers','0'],env=env,check=True)
+   command = [sys.executable,'-m','torch.distributed.run','--standalone','--nproc_per_node=1',str(R/'src/stage2/runners/train_prototype_mass_flow.py'),'--config',str(R/'configs/train.py'),'--pair-records',str(R/'assets/pair_records.pt'),'--pathway-base',str(R/'assets/pathway_base.pt'),'--output-dir',str(a.output),'--seed',str(a.seed),'--num-workers','0']
+   if a.epochs is not None:
+    command.extend(['--epochs', str(a.epochs)])
+   subprocess.run(command, env=env, check=True)
   elif a.command=='forward':
    for seed in ([a.seed] if a.seed is not None else [43,44,45]):
     assert not (R/f'forward/seed{seed}').exists(),'Forward outputs already exist'
