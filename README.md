@@ -157,7 +157,7 @@ PYTHONPATH=src python src/stage2/runners/evaluate_prototype_mass_flow.py \
   --strict-test-only --evaluation-split test --device cuda
 ```
 
-Repeat with the matching checkpoint and output directory for seeds 44 and 45. This explicit command evaluates the response model without running the additional historical contextual audit bundled into `scripts/hypo.py forward`.
+Repeat with the matching checkpoint and output directory for seeds 44 and 45.
 
 ### Generate and rank signed pathway scores
 

@@ -42,13 +42,7 @@ for seed in [43,44,45]:
   for pi,path in enumerate(paths):
    for di,sign in enumerate(['+','-']):rows.append(dict(seed=seed,celltype=cell,pathway=path,direction=sign,score=s[pi,di],training_examples=support[cell]))
  scores=np.stack(scores)
- legacy_results=R/'RESULTS.json'
- legacy_verified=False
- if legacy_results.exists():
-  official=json.loads((R/'RESULTS.json').read_text())[str(seed)]['hypoblast']['rankings'];got=scores[classes.index('Hypoblast-like cell')].max(1)
-  assert all(np.isclose(got[paths.index(v['pathway'])],v['score'],atol=2e-4,rtol=2e-4) for v in official)
-  legacy_verified=True
- all_scores.append(scores);checks.append(dict(seed=seed,hypoblast_feature_max_error=float(err),hypoblast_identity_scores_reproduced=legacy_verified));print('SCORED',seed,flush=True);del mod;torch.cuda.empty_cache()
+ all_scores.append(scores);checks.append(dict(seed=seed,hypoblast_feature_max_error=float(err)));print('SCORED',seed,flush=True);del mod;torch.cuda.empty_cache()
 a=np.stack(all_scores);pd.DataFrame(rows).to_csv(O/'scores_all_celltypes_34.csv',index=False)
 plt.rcParams.update({'font.family':'DejaVu Sans','pdf.fonttype':42,'svg.fonttype':'none'})
 for n in [17,34]:

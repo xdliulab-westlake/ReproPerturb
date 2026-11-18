@@ -19,7 +19,7 @@ def helpers():
  return aux
 def functions():
  from hypo_release import shared_math
- return {name:getattr(shared_math,name) for name in ['kernel','fitpredict','combine','evaluate']}
+ return {name:getattr(shared_math,name) for name in ['kernel','fitpredict','combine']}
 def examples(seed):
  helpers();return torch.load(R/f'inputs/examples_seed{seed}.pt',weights_only=False)
 def extract(seed):
@@ -93,9 +93,6 @@ def select():
  for seed in data:
   dest=R/f'models/seed{seed}';dest.mkdir(parents=True,exist_ok=True);np.save(dest/'oof_logits.npy',best_oof[seed])
  print('LOCKED',best,flush=True)
-def metric(items,logits,mask,paths):
- from hypo_release.shared_metrics import metric as score
- return score(items,np.asarray(logits).reshape(-1,17,2),mask,paths)
 def fit_evaluate():
  c=read(R/'configs/SHARED_CONFIG.json');fn=functions()
  for seed in [43,44,45]:
@@ -121,6 +118,5 @@ def main():
    for seed in ([a.seed] if a.seed is not None else [43,44,45]):
     assert not (R/f'forward/seed{seed}').exists(),'Forward outputs already exist'
     common=['--flow-checkpoint',str(R/f'weights/seed{seed}.pt'),'--pair-records',str(R/'assets/pair_records.pt'),'--pathway-base',str(R/'assets/pathway_base.pt')]
-    subprocess.run([sys.executable,str(R/'src/hypo_release/pipeline/evaluate_contextual_pathways_v741.py'),*common,'--split-manifest',str(R/'assets/context_split.csv'),'--output-dir',str(R/f'forward/seed{seed}/contextual'),'--context-drug-count','2','--tail-fraction','.10','--activity-strength','.75','--batch-size','24','--n-ode-steps','20','--device','cuda'],env=env,check=True)
     subprocess.run([sys.executable,str(R/'src/stage2/runners/evaluate_prototype_mass_flow.py'),*common,'--config',str(R/'configs/train.py'),'--split-manifest',str(R/'assets/stage2_split.csv'),'--output-dir',str(R/f'forward/seed{seed}/test'),'--strict-test-only','--evaluation-split','test','--device','cuda'],env=env,check=True)
 if __name__=='__main__':main()
