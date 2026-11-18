@@ -1,10 +1,12 @@
 # ReproPerturb
 
-**Modeling cellular responses to combinatorial perturbations and prioritizing signed pathway interventions.**
+**Population-level prediction and pathway prioritization for combinatorial perturbations in stem-cell differentiation.**
 
-ReproPerturb combines a discrete cell-state representation with a conditional population response model. It predicts changes in cell-type composition and gene expression, and uses model-derived responses to score pathway interventions for a target cell type.
+Small-molecule and protein combinations can alter both the abundance of cell states and their transcriptional profiles. ReproPerturb takes an initial cell population and a set of interventions, then predicts the endpoint cell-type composition and gene expression. The workflow was developed for stem-cell differentiation experiments that include hypoblast-like populations.
 
-This repository contains the Stage-1 and Stage-2 architectures, training and evaluation code, pathway-scoring workflow, and selected benchmark scripts. Datasets and trained model weights are distributed separately from the source code; download locations are not provided in this repository.
+ReproPerturb connects two tasks. **Forward prediction** estimates a population’s response to a specified combination. **Pathway prioritization** starts with a target cell type, probes the trained response model across reference backgrounds and ranks 34 candidates that each specify a pathway and a direction. The same pathway can receive different scores for activation and inhibition.
+
+**Version [v0.1.0](https://github.com/xdliulab-westlake/ReproPerturb/releases/tag/v0.1.0)** contains the model, training and evaluation code, pathway scoring workflow and benchmark implementations. Reproduction requires prepared data and checkpoints obtained separately. See the [version history](CHANGELOG.md) and [required assets](#data-and-model-assets).
 
 ## Contents
 
@@ -35,25 +37,25 @@ flowchart LR
     K --> O[Ranking of 34 signed candidates]
 ```
 
-### Stage-1: Cell-state representation
+### Stage-1 – Cell-state representation
 
-Precomputed scFoundation embeddings are projected to a 128-dimensional representation and encoded with SoftVQ. The configuration uses four codebooks, each with 128 entries of 32 dimensions. Expression reconstruction and cell-type supervision guide training. A set of 128 population prototypes summarizes the starting cell population.
+Stage-1 projects precomputed scFoundation embeddings into a 128-dimensional representation and applies soft vector quantization. Four codebooks each contribute a 32-dimensional block with 128 entries. Training uses expression reconstruction and cell-type supervision. The Stage-2 pipeline summarizes a starting population with 128 prototypes derived from the Stage-1 representations, recording both the mass and presence of each prototype. The frozen Stage-1 decoder provides the expression readout for Stage-2.
 
-**Implementation:** [architecture](src/stage1/model.py), [components](src/stage1/components/), [training](src/stage1/train.py), [configuration](src/configs/stage1/stage1_softvq_hypo_hvg2000_celltype_updated_v7.py).
+See the [Stage-1 architecture](src/stage1/model.py), [training code](src/stage1/train.py) and [configuration](src/configs/stage1/stage1_softvq_hypo_hvg2000_celltype_updated_v7.py).
 
-### Stage-2: Conditional response prediction
+### Stage-2 – Conditional response prediction
 
-A signed pathway encoder represents perturbation combinations over 17 pathways. A conditional prototype mass-flow model uses self-attention, cross-attention and time conditioning to predict changes in prototype mass, presence and state, with cell-type composition and expression readouts.
+The condition encoder maps each intervention to signed effects over 17 pathways. It combines those effects with a saturating sum and learns interaction corrections for combinations. The response model integrates a conditional velocity field over prototype mass in centered log-ratio coordinates. At the endpoint, predicted presence gates the masses before normalization, while predicted state shifts modify the prototype embeddings. Mapping the resulting masses to cell types gives the composition estimate. Decoding shifted prototype states and weighting by their predicted masses gives the population expression estimate.
 
-**Implementation:** [response model](src/stage2/model/prototype_mass_flow.py), [condition encoder](src/stage2/model/pathway_condition.py), [training and evaluation](src/stage2/runners/), [configuration](configs/model.json).
+Training supervises flow, endpoint presence, proportions and expression. The configured model also uses matched add-one pairs to supervise the incremental response when an intervention is added to a common background. See the [condition encoder](src/stage2/model/pathway_condition.py), [prototype mass flow](src/stage2/model/prototype_mass_flow.py), [training code](src/stage2/runners/train_prototype_mass_flow.py) and [configuration](configs/model.json).
 
 ### Signed pathway scoring
 
-The response model is probed at an activity perturbation strength of **1.5** for both directions of each pathway. A fitted kernel relation scorer transforms response features into 34 signed scores. Each candidate is aggregated over the highest-scoring 7 of 64 backgrounds, then averaged across seeds 43, 44 and 45.
+The pathway workflow uses 64 two-intervention backgrounds from the training split. For each background, it adjusts one pathway activity by **+1.5 or −1.5** in model activity units and computes the change in the predicted target cell-type proportion relative to the same background before the adjustment. It standardizes the 34 response features within each background and target cell type.
 
-**All 34 candidates are ranked together.** The positive and negative directions of the same pathway remain separate candidates. Scores indicate relative model priorities, not experimental concentrations, measured pathway activities or biological validation.
+A kernel relation scorer trained on labeled examples combines those response features with learned pathway and direction information. The seeds share a locked relation configuration, with the kernel fitted separately for each seed. For a given cell type and signed candidate, the workflow averages the seven highest scores across the 64 backgrounds, then averages the resulting scores across seeds **43, 44 and 45**. It ranks all 34 candidates directly and retains both directions in the output.
 
-**Implementation:** [relation fitting](src/hypo_release/unified.py), [scoring equations](src/hypo_release/shared_math.py), [response extraction](workflows/all_celltype_heatmaps.py), [ranking](scripts/rank_signed34.py).
+Interpret the scores as computational priorities for the supplied reference backgrounds. The heatmaps mark cell types that lack labeled examples in the relation training set. See the [relation fitting code](src/hypo_release/unified.py), [scoring equations](src/hypo_release/shared_math.py), [scoring workflow](workflows/all_celltype_heatmaps.py) and [ranking script](scripts/rank_signed34.py).
 
 ## Repository structure
 
@@ -81,7 +83,7 @@ Detailed module guides: [Stage-1](src/stage1/README.md), [Stage-2](src/stage2/RE
 The code targets **Python 3.10** and a CUDA-enabled PyTorch environment. The supplied dependency file pins PyTorch **2.3.1 with CUDA 11.8**. Training and response extraction require GPU access; ranking an existing score table only uses Python's standard library.
 
 ```bash
-git clone https://github.com/lzzsh/ReproPerturb.git
+git clone --branch v0.1.0 https://github.com/xdliulab-westlake/ReproPerturb.git
 cd ReproPerturb
 python3.10 -m venv .venv
 source .venv/bin/activate
@@ -99,8 +101,8 @@ The repository does not include expression matrices, prepared pair records, chec
 | Component | Required inputs |
 | --- | --- |
 | Stage-1 training | Precomputed cell embeddings, expression targets, cell-type metadata, gene indices and split definition; paths are specified in the Stage-1 configuration |
-| Stage-2 training/evaluation | `weights/stage1.pt`, `assets/pair_records.pt`, `assets/pathway_base.pt`, `assets/drug_pathway_sign.csv`, `assets/stage2_split.csv` and `assets/context_split.csv` |
-| Response extraction | `weights/seed43.pt`, `weights/seed44.pt`, `weights/seed45.pt` and `inputs/examples_seed{seed}.pt`, in addition to the population/pathway assets |
+| Stage-2 training and evaluation | `weights/stage1.pt`, `assets/pair_records.pt`, `assets/pathway_base.pt`, `assets/drug_pathway_sign.csv` and `assets/stage2_split.csv`. Evaluation also requires the best Stage-2 checkpoint for the seed. |
+| Response extraction | The best Stage-2 checkpoint for each seed under `weights/seed{seed}.pt`, labeled `inputs/examples_seed{seed}.pt` and `assets/context_split.csv`, along with the population and pathway inputs above. |
 | Relation scoring | `configs/SHARED_CONFIG.json` and fitted `models/seed{seed}/kernel_model.npz`; fitting requires extracted response features and labeled training examples |
 | Ranking only | A signed-score CSV with `seed`, `celltype`, `pathway`, `direction` and `score` columns |
 
@@ -172,11 +174,19 @@ The workflow writes response features, signed relation scores and heatmaps. The 
 
 ## Benchmarks
 
-Composition and expression use task-specific checkpoints. Each composition model predicts the ten cell-type proportions directly, with checkpoint selection by validation composition MAE. Expression checkpoint selection for ReproPerturb uses validation gene PCC. See the [benchmark guide](benchmarks/README.md) for the training scripts, per-seed evaluation command and metric definitions. The pathway workflow uses its own best checkpoint selected by validation base loss.
+The benchmark uses 146 training conditions, 21 validation conditions and 14 test conditions. It evaluates seeds 43, 44 and 45 separately. The composition benchmark compares nine methods that directly predict proportions for ten cell types. For expression, predictions are evaluated over 2,000 aligned genes, with matched controls used to compute changes in expression.
+
+| Workflow | Best checkpoint criterion |
+| --- | --- |
+| Stage-2 response model for pathway scoring | Lowest validation base loss |
+| Composition benchmark | Lowest validation composition MAE |
+| ReproPerturb expression benchmark | Highest validation gene-wise Pearson correlation |
+
+See the [benchmark guide](benchmarks/README.md) for the methods, scoring commands, metrics and required external code.
 
 ## Citation
 
-A manuscript citation and DOI are not specified in this repository. Until bibliographic details are available, reference the repository URL and the exact commit used for an analysis. Cite the upstream methods separately when using their code or pretrained representations.
+For analyses using this version, cite *ReproPerturb* with the release tag and record the exact commit, data split and checkpoint for each seed. Cite the upstream methods where applicable. See the [v0.1.0 source release](https://github.com/xdliulab-westlake/ReproPerturb/releases/tag/v0.1.0).
 
 ## License and acknowledgements
 
@@ -186,4 +196,4 @@ ReproPerturb uses [scFoundation](https://github.com/biomap-research/scFoundation
 
 ## Contact
 
-For questions about the implementation, open a [GitHub issue](https://github.com/lzzsh/ReproPerturb/issues) or contact [liaozizhuo@westlake.edu.cn](mailto:liaozizhuo@westlake.edu.cn).
+For questions about the implementation, open a [GitHub issue](https://github.com/xdliulab-westlake/ReproPerturb/issues) or contact [liaozizhuo@westlake.edu.cn](mailto:liaozizhuo@westlake.edu.cn).
