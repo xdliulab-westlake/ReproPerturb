@@ -1,12 +1,13 @@
-# Final-figure benchmark sources
+# Response benchmarks
 
-Only final Extended Data Figure 3 plotting/aggregation, adopted CellFlow/chemCPA/STATE evaluators and unified STACK training/scoring are retained. Old plots, protocol-ranking comparisons, queues, installation/recovery scripts and incomplete replacement PerturbNet/PerturbGen analyses have been removed from this publication. Server originals are unchanged.
+The composition comparison uses one direct proportion predictor per model and seed. The test set contains 14 conditions with 10 cell types; the outer training and validation sets contain 146 and 21 conditions. ReproPerturb trains a new Stage-2 model with the native loss. External models fine-tune their own prediction path and proportion head. Select the checkpoint with the lowest validation composition MAE (patience 20, maximum 3,000 epochs).
 
-- `native-alignment-20261111/ed3_update_20261116/plot.py`: final panels.
-- `native-alignment-20261111/composition_extra_20261114/calculate.py`: composition metrics.
-- `native-alignment-20261111/finalize_chemcpa_*.py`: final metric-table updates.
-- `native-alignment-20261111/evaluate_cellflow.py`, `evaluate_chemcpa*.py`: adopted evaluation routes; repaired chemCPA has distinct seed-43 and seed-44/45 routes.
-- `hypo-independent-intervention-20261112/evaluate_state.py`: adopted STATE evaluation.
-- `stack-unified-20261113/`: adopted unified STACK training/scoring.
+[Composition training and scoring](composition/) covers ReproPerturb, STATE, CellFlow, CPA, chemCPA, G2CP, STACK and PerturbNet. The model-specific training scripts require the prepared datasets, upstream model code and checkpoint directories named in each script. PerturbGen's independent composition head was pending in the source audit and is excluded.
 
-External model source, data, predictions and environment paths are required. This is not a standalone implementation of every benchmark. Final figures retain legacy adapted PerturbNet/PerturbGen values; incomplete replacement training is excluded. Retrospective evaluation and differing checkpoint selection remain limitations.
+Score each seed (43, 44, 45) independently, then report the mean and sample SD. Report MAE and RMSE in percentage points, Jensen–Shannon divergence in bits, mean per-condition Hellinger distance and dominant-type accuracy with fractional credit for ties. CSV inputs have a sample_id column and one column per class. NPZ predictions contain sample_ids, classes and proportions.
+
+```bash
+python benchmarks/composition/evaluate.py --prediction predictions.npz --truth truth.npz --split benchmark.json
+```
+
+[Expression training and scoring](expression/) uses a separate ReproPerturb checkpoint selected on validation gene PCC. The evaluator compares aligned condition-by-gene matrices over 2,000 genes, using matched control expression for delta metrics. The ten displayed metrics are sample and gene PCC and sample-wise R² for raw and delta expression, raw MSE, true top-100 MAE, top-20 overlap and top-100 Jaccard. Undefined correlations are excluded and defined counts are returned. score_expression.py reads the prepared server layout. Comparisons are computational evaluations.

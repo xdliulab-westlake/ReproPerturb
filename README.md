@@ -172,9 +172,7 @@ The workflow writes response features, signed relation scores and heatmaps. The 
 
 ## Benchmarks
 
-See the [benchmark guide](benchmarks/README.md) for retained evaluation and figure-generation scripts, including the adopted CellFlow, chemCPA and STATE evaluators and unified STACK training/scoring.
-
-The final comparison uses the full ReproPerturb model. PerturbNet and PerturbGen values in that comparison come from earlier adapted evaluations; incomplete replacement training is not included here. External dependencies, checkpoint selection differences and retrospective development exposure should be considered when interpreting the benchmark. Included scripts do not establish independent biological validation or guarantee full reproduction without the external assets.
+Composition and expression use task-specific checkpoints. Each composition model predicts the ten cell-type proportions directly, with checkpoint selection by validation composition MAE. Expression checkpoint selection for ReproPerturb uses validation gene PCC. See the [benchmark guide](benchmarks/README.md) for the training scripts, per-seed evaluation command and metric definitions. The epoch-150 checkpoints described above belong to the pathway workflow.
 
 ## Citation
 
